@@ -36,7 +36,7 @@ Quick-n-dirty loading of UCSF ecog data.
 
 from __future__ import division
 import numpy as np
-import htkmfc
+import ecog_ucsf.cmu_sphinx.htkmfc as htkmfc
 import os
 
 class ECBlock(object):

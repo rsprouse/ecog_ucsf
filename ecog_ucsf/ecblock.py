@@ -36,7 +36,7 @@ Quick-n-dirty loading of UCSF ecog data.
 
 from __future__ import division
 import numpy as np
-from pyhtk import HTK
+import htkmfc
 import os
 
 class ECBlock(object):
@@ -86,11 +86,9 @@ Returns an ECBlock object.
 
     # Electrodes (channels) are numbered starting with 1.
     b.badchan = get_bad_channels(ddir, badchan_subdir, badchan)
-    #htk = htkmfc.openhtk(os.path.join(ddir, subdir, int2wavname(1)))
-    htk = HTK.HTKFile()
-    htk.load(filename=os.path.join(ddir, subdir, int2wavname(1)))
+    htk = htkmfc.openhtk(os.path.join(ddir, subdir, int2wavname(1)))
     b.htkrate = htk.sampPeriod * 1E-3
-    c1 = np.squeeze(htk.data)
+    c1 = np.squeeze(htk.getall())
     if channel_cb is not None:
         c1 = channel_cb(c1)
     b.data = np.empty([256] + list(c1.shape)) * np.nan

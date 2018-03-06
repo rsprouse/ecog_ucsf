@@ -68,8 +68,8 @@ def get_bad_channels(ddir, subdir='Artifacts', fname='badChannels.txt'):
     with open(os.path.join(ddir, subdir, fname)) as f:
         return [int(n) for n in f.readline().strip().split()]
     
-def read_block(ddir, subdir='ecogDS', channel_cb=None, badchan_subdir='Artifacts',
-badchan='badChannels.txt'):
+def read_block(ddir, subdir='ecogDS', channel_cb=None, dtype=np.float32,
+        badchan_subdir='Artifacts', badchan='badChannels.txt'):
     '''Load all the Wav*.htk channel data in a block subdir into an ECBlock.
 
 The channel_cb parameter may contain a callback function to apply to each
@@ -88,17 +88,18 @@ Returns an ECBlock object.
     b.badchan = get_bad_channels(ddir, badchan_subdir, badchan)
     htk = htkmfc.openhtk(os.path.join(ddir, subdir, int2wavname(1)))
     b.htkrate = htk.sampPeriod * 1E-3
-    c1 = np.squeeze(htk.getall())
+    c1 = np.squeeze(htk.getall().astype(dtype))
     if channel_cb is not None:
         c1 = channel_cb(c1)
-    b.data = np.empty([256] + list(c1.shape)) * np.nan
+    b.data = np.empty([256] + list(c1.shape), dtype=dtype) * np.nan
     if 1 not in b.badchan:
         b.data[0,] = c1
     for idx in range(2, 257):
         if idx not in b.badchan:
             htk = htkmfc.openhtk(os.path.join(ddir, subdir, int2wavname(idx)))
+            c = np.squeeze(htk.getall().astype(dtype))
             if channel_cb is None:
-                b.data[idx-1,] = np.squeeze(htk.getall())
+                b.data[idx-1,] = c
             else:
-                b.data[idx-1,] = channel_cb(np.squeeze(htk.getall()))
+                b.data[idx-1,] = channel_cb(c)
     return b

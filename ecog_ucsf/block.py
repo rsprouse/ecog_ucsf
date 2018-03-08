@@ -128,17 +128,47 @@ replacement ndarray
 def read_block(basedir, subdir='ecogDS', converter=None, dtype=np.float32,
 replace=True, artifact_dir='Artifacts', badchan='badChannels.txt',
 badsegs='badTimeSegments.mat'):
-    '''Load all the Wav*.htk channel data in a block subdir into an ECBlock.
+    '''Load the Wav*.htk channel data and metadata in a block into an ECBlock.
 
-The converter parameter may contain a callback function to apply to each
-channel's data before storing in the data ndarray. The callback is applied
-separately to each channel and may change the shape of the channel data,
-as long as the channel shapes remain compatible with one another. If the
-callback function changes the effective sample rate of the data, note that
-the change will not be reflected in the rate attribute of the ECBlock
-returned by read_block().
+Parameters
+----------
+basedir : str, required
+    The base directory containing an ECOG block acquisition
 
-Returns an ECBlock object.
+subdir : str, optional (default 'ecogDS')
+    The subdirectory in basedir from which to load the Wav*.htk files.
+
+converter : function, optional (default None)
+    The converter function to apply to each channel's data before storing
+    in the output ndarray. The callback is applied separately to each channel
+    (i.e. the data from each .htk file) and may change the shape of the
+    channel data, as long as the channel shapes remain compatible with one
+    another. If the callback function changes the effective sample rate of
+    the data, note that the change will not be reflected in the htkrate
+    attribute of the ECBlock returned by read_block().
+
+dtype : data-type, optional (default 32-bit float)
+    The desired data type for the output ndarray.
+
+replace : boolean, optional (default True)
+    If True, replace bad channel and bad segment values defined in the
+    artifact subdirectory with np.nan.
+
+artifact_dir : str, optional (default 'Artifacts')
+    The subdirectory in basedir containing information on bad channels
+    and bad segments.
+
+badchan : str, optional (default 'badChannels.txt')
+    The name of the file containing bad channel information.
+
+badsegs : str, {*.mat, *.lab}, optional (default 'badTimeSegments.mat')
+    The name of the file containing bad segment information. If the
+    file extension is .mat the file will be loaded as a binary Matlab
+    file. If the extension is .lab the file will be treated as a text file.
+Returns
+-------
+out : ECBlock
+    ECBlock object containing ndarray block data and associated metadata.
 '''
     b = ECBlock(basedir=basedir)
 

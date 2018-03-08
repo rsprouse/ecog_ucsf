@@ -125,12 +125,12 @@ replacement ndarray
     data[segmask] = val
     return data
 
-def read_block(basedir, subdir='ecogDS', channel_cb=None, dtype=np.float32,
+def read_block(basedir, subdir='ecogDS', converter=None, dtype=np.float32,
 replace=True, artifact_dir='Artifacts', badchan='badChannels.txt',
 badsegs='badTimeSegments.mat'):
     '''Load all the Wav*.htk channel data in a block subdir into an ECBlock.
 
-The channel_cb parameter may contain a callback function to apply to each
+The converter parameter may contain a callback function to apply to each
 channel's data before storing in the data ndarray. The callback is applied
 separately to each channel and may change the shape of the channel data,
 as long as the channel shapes remain compatible with one another. If the
@@ -150,8 +150,8 @@ Returns an ECBlock object.
     c = np.squeeze(htk.getall().astype(dtype))
     if replace is True:
         c = replace_bad_segs(c, b.htkrate, b.badsegs)
-    if channel_cb is not None:
-        c = channel_cb(c)
+    if converter is not None:
+        c = converter(c)
     b.data = np.empty([256] + list(c.shape), dtype=dtype) * np.nan
     if (replace is False) or (1 not in b.badchan):
         b.data[0,] = c
@@ -163,8 +163,8 @@ Returns an ECBlock object.
             c = np.squeeze(htk.getall().astype(dtype))
             if replace is True:
                 c = replace_bad_segs(c, b.htkrate, b.badsegs)
-            if channel_cb is None:
+            if converter is None:
                 b.data[idx,] = c
             else:
-                b.data[idx,] = channel_cb(c)
+                b.data[idx,] = converter(c)
     return b

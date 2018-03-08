@@ -66,10 +66,12 @@ convention where channel 1 is '11' and Channel 256 is '464'.'''
         int(np.mod(n-1, 64) + 1)
     )
 
+# TODO: check correctness! These are probably matlab-style indexes.
 def get_bad_channels(basedir, subdir, fname):
-    '''Return an array of bad channel numbers in basedir.'''
+    '''Return an array of bad channel numbers in basedir. Subtract 1 from
+each value since numpy arrays are 0-based.'''
     with open(os.path.join(basedir, subdir, fname)) as f:
-        return [int(n) for n in f.readline().strip().split()]
+        return [int(n)-1 for n in f.readline().strip().split()]
 
 def get_bad_segments(basedir, subdir, fname):
     '''Return a dataframe of bad segments.'''

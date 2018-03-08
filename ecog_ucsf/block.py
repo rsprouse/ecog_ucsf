@@ -155,16 +155,16 @@ Returns an ECBlock object.
     b.data = np.empty([256] + list(c.shape), dtype=dtype) * np.nan
     if (replace is False) or (1 not in b.badchan):
         b.data[0,] = c
-    for idx in range(2, 257):
+    for idx in range(1, 256):
         if (replace is False) or (idx not in b.badchan):
             htk = htkmfc.openhtk(
-                os.path.join(basedir, subdir, int2wavname(idx))
+                os.path.join(basedir, subdir, int2wavname(idx+1))
             )
             c = np.squeeze(htk.getall().astype(dtype))
             if replace is True:
                 c = replace_bad_segs(c, b.htkrate, b.badsegs)
             if channel_cb is None:
-                b.data[idx-1,] = c
+                b.data[idx,] = c
             else:
-                b.data[idx-1,] = channel_cb(c)
+                b.data[idx,] = channel_cb(c)
     return b

@@ -81,7 +81,7 @@ def get_bad_segments(basedir, subdir, fname):
         segs = pd.DataFrame(
             m['badTimeSegments'][:, [0,1]],
             columns=['t1', 't2']
-        ).sort_values('t1')
+        ).sort_values('t1').reset_index()
     else:
         segs = pd.read_csv(
             segfile,

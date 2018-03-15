@@ -117,7 +117,9 @@ Returns:
 replacement ndarray
 '''
     # Convert segment times to a mask of sample indexes.
-    segidx = (badsegs * datarate).apply(np.around).astype(np.int)
+    maxindex = len(data)-1
+    
+    segidx = np.minimum((badsegs * datarate).apply(np.around).astype(np.int),maxindex)
     segmask = np.concatenate(
         [np.arange(r.t1, r.t2) for r in segidx.itertuples()]
     )
@@ -171,7 +173,7 @@ out : ECBlock
     ECBlock object containing ndarray block data and associated metadata.
 '''
     b = ECBlock(basedir=basedir)
-
+    
     # Electrodes (channels) are numbered starting with 1.
     b.badchan = get_bad_channels(basedir, artifact_dir, badchan)
     b.badsegs = get_bad_segments(basedir, artifact_dir, badsegs)

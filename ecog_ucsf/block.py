@@ -44,14 +44,13 @@ import os
 class ECBlock(object):
     '''An object representing a block of UCSF ECOG data.'''
     def __init__(self, basedir='', subdir='ecogDS', data=np.array([]),
-datarate=np.nan, htkrate=np.nan, badchan=[]):
+htkrate=np.nan, badchan=[]):
         super(ECBlock, self).__init__()
         self.basedir = basedir
         self.subdir = subdir
-        self.data = data         # Channel data for block
-        self.datarate = datarate # Data sample rate after converter applied
-        self.htkrate = htkrate   # Sample rate of channel data from .htk file
-        self.badchan = badchan   # List of bad channels in block
+        self.data = data   # Channel data for block
+        self.htkrate = htkrate       # Sample rate of channel data from .htk file
+        self.badchan = badchan        # List of bad channels in block
 
     def __repr__(self):
         r = "ECBlock(basedir='{:}', subdir='{:}', data={:}, htkrate={:}, badchan={:})".format(
@@ -170,7 +169,6 @@ badsegs : str, {*.mat, *.lab}, optional (default 'badTimeSegments.mat')
     The name of the file containing bad segment information. If the
     file extension is .mat the file will be loaded as a binary Matlab
     file. If the extension is .lab the file will be treated as a text file.
-
 Returns
 -------
 out : ECBlock
@@ -184,14 +182,10 @@ out : ECBlock
     htk = htkmfc.openhtk(os.path.join(basedir, subdir, int2wavname(1)))
     b.htkrate = htk.sampPeriod * 1E-4
     c = np.squeeze(htk.getall().astype(dtype))
-    b.datarate = b.htkrate
-    nsamp = c.shape[0] # Time axis expected to be first in all ecog .htk files
+    if replace is True:
+        c = replace_bad_segs(c, b.htkrate, b.badsegs)
     if converter is not None:
         c = converter(c)
-        if c.shape[0] != nsamp:  # if converter does resampling
-            b.datarate = b.datarate * c.shape[0] / nsamp
-    if replace is True:
-        c = replace_bad_segs(c, b.datarate, b.badsegs)
     b.data = np.empty([256] + list(c.shape), dtype=dtype) * np.nan
     if (replace is False) or (1 not in b.badchan):
         b.data[0,] = c
@@ -201,10 +195,10 @@ out : ECBlock
                 os.path.join(basedir, subdir, int2wavname(idx+1))
             )
             c = np.squeeze(htk.getall().astype(dtype))
+            if replace is True:
+                c = replace_bad_segs(c, b.htkrate, b.badsegs)
             if converter is None:
                 b.data[idx,] = c
             else:
                 b.data[idx,] = converter(c)
-            if replace is True:
-                c = replace_bad_segs(c, b.datarate, b.badsegs)
     return b

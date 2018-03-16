@@ -118,8 +118,10 @@ replacement ndarray
 '''
     # Convert segment times to a mask of sample indexes.
     maxindex = len(data)-1
-    
-    segidx = np.minimum((badsegs * datarate).apply(np.around).astype(np.int),maxindex)
+    segidx = np.minimum(
+        (badsegs * datarate).apply(np.around).astype(np.int),
+        maxindex
+    )
     segmask = np.concatenate(
         [np.arange(r.t1, r.t2) for r in segidx.itertuples()]
     )

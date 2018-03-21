@@ -53,6 +53,16 @@ datarate=np.nan, htkrate=np.nan, badchan=[]):
         self.htkrate = htkrate   # Sample rate of channel data from .htk file
         self.badchan = badchan   # List of bad channels in block
 
+    @property
+    def badmask(self):
+        '''Boolean mask of indices for 'bad' time segments.'''
+        return ~self.goodmask
+
+    @property
+    def tsamp(self):
+        '''Return a time series that maps sample index to time.'''
+        return np.arange(self.data.shape[1]) / self.datarate
+
     def __repr__(self):
         r = "ECBlock(basedir='{:}', subdir='{:}', data={:}, htkrate={:}, badchan={:})".format(
             self.basedir, self.subdir, self.data, self.htkrate, self.badchan
@@ -108,14 +118,26 @@ def replace_bad_segs(data, datarate, badsegs, val=np.nan):
     '''Given an input ndarray, return a modified ndarray in which values that occur
 during the bad segment times are replaced with specified value (default np.nan).
 
-Parameters:
-data: input ndarray (n-dimensional data supported)
-datarate: sample rate of the data ndarray
-badsegs: bad segment dataframe as created by read_block(), i.e. columns 't1' and 't2'
-val: replacement value for bad segment samples (default np.nan)
+Parameters
+----------
 
-Returns:
-replacement ndarray
+data : ndarray
+    input ndarray (n-dimensional data supported)
+
+datarate : numeric
+    sample rate of the data ndarray
+
+badsegs : DataFrame
+    bad segment dataframe as created by read_block(), i.e. columns 't1' and 't2'
+
+val : numeric
+    replacement value for bad segment samples (default np.nan)
+
+Returns
+-------
+
+replaced : ndarray
+    copy of input ndarray with replacement values
 '''
     # Convert segment times to a mask of sample indexes.
     maxindex = len(data)-1
@@ -192,6 +214,15 @@ out : ECBlock
             b.datarate = b.datarate * c.shape[0] / nsamp
     if replace is True:
         c = replace_bad_segs(c, b.datarate, b.badsegs)
+    segedges = np.minimum(
+        (b.badsegs * b.datarate).apply(np.around).astype(np.int),
+        c.shape[0]
+    )
+    b.badidx = np.concatenate(
+        [np.arange(r.t1, r.t2) for r in segedges.itertuples()]
+    )
+    b.goodmask = np.array([True] * c.shape[0])
+    b.goodmask[b.badidx] = False
     b.data = np.empty([256] + list(c.shape), dtype=dtype) * np.nan
     if (replace is False) or (1 not in b.badchan):
         b.data[0,] = c

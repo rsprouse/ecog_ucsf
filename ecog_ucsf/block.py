@@ -59,7 +59,7 @@ datarate=np.nan, htkrate=np.nan, badchan=[]):
         return ~self.goodmask
 
     @property
-    def tsamp(self):
+    def ts(self):
         '''Return a time series that maps sample index to time.'''
         return np.arange(self.data.shape[1]) / self.datarate
 

@@ -38,6 +38,7 @@ from __future__ import division
 import numpy as np
 import pandas as pd
 from scipy.io import loadmat
+from audiolabel import read_label
 import ecog_ucsf.cmu_sphinx.htkmfc as htkmfc
 import os
 
@@ -154,7 +155,7 @@ replaced : ndarray
 
 def read_block(basedir, subdir='ecogDS', converter=None, dtype=np.float32,
 replace=True, artifact_dir='Artifacts', badchan='badChannels.txt',
-badsegs='badTimeSegments.mat'):
+badsegs='badTimeSegments.mat', labeltiers=None):
     '''Load the Wav*.htk channel data and metadata in a block into an ECBlock.
 
 Parameters
@@ -193,6 +194,10 @@ badsegs : str, {*.mat, *.lab}, optional (default 'badTimeSegments.mat')
     file extension is .mat the file will be loaded as a binary Matlab
     file. If the extension is .lab the file will be treated as a text file.
 
+labeltiers : list
+    List of tiers that will be passed to audiolabel's `read_label()`.
+    If None, do not load labels.
+
 Returns
 -------
 out : ECBlock
@@ -200,9 +205,20 @@ out : ECBlock
 '''
     b = ECBlock(basedir=basedir)
     
-    # Electrodes (channels) are numbered starting with 1.
+    b.name = os.path.basename(basedir)
     b.badchan = get_bad_channels(basedir, artifact_dir, badchan)
     b.badsegs = get_bad_segments(basedir, artifact_dir, badsegs)
+
+    if labeltiers is not None:
+        tg = os.path.join(basedir, b.name + '.TextGrid')
+        tlist = read_label(tg, 'praat', tiers=labeltiers)
+        for tidx, t in enumerate(tlist):
+            masks = []
+            for seg in b.badsegs.itertuples():
+                masks.append( (seg.t2 < t.t1) | (seg.t1 > t.t2) )
+            tlist[tidx] = t.assign(is_good=np.array(masks).all(axis=0))
+            b.labels = dict(zip(labeltiers, tlist))
+
     htk = htkmfc.openhtk(os.path.join(basedir, subdir, int2wavname(1)))
     b.htkrate = htk.sampPeriod * 1E-4
     c = np.squeeze(htk.getall().astype(dtype))

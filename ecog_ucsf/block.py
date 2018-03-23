@@ -239,7 +239,7 @@ out : ECBlock
     )
     b.goodmask = np.array([True] * c.shape[0])
     b.goodmask[b.badidx] = False
-    b.data = np.empty([256] + list(c.shape), dtype=dtype) * np.nan
+    b.data = np.full([256] + list(c.shape), np.nan, dtype=dtype)
     if (replace is False) or (1 not in b.badchan):
         b.data[0,] = c
     for idx in range(1, 256):

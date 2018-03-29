@@ -141,16 +141,17 @@ replaced : ndarray
     copy of input ndarray with replacement values
 '''
     # Convert segment times to a mask of sample indexes.
-    maxindex = len(data)-1
-    segidx = np.minimum(
-        (badsegs * datarate).apply(np.around).astype(np.int),
-        maxindex
-    )
-    segmask = np.concatenate(
-        [np.arange(r.t1, r.t2) for r in segidx.itertuples()]
-    )
-    # Assume time is the first axis.
-    data[segmask] = val
+    if len(badsegs) > 0:
+        maxindex = len(data)-1
+        segidx = np.minimum(
+            (badsegs * datarate).apply(np.around).astype(np.int),
+            maxindex
+        )
+        segmask = np.concatenate(
+            [np.arange(r.t1, r.t2) for r in segidx.itertuples()]
+        )
+        # Assume time is the first axis.
+        data[segmask] = val
     return data
 
 def read_block(basedir, subdir='ecogDS', converter=None, dtype=np.float32,
@@ -234,11 +235,14 @@ out : ECBlock
         (b.badsegs * b.datarate).apply(np.around).astype(np.int),
         c.shape[0]
     )
-    b.badidx = np.concatenate(
-        [np.arange(r.t1, r.t2) for r in segedges.itertuples()]
-    )
     b.goodmask = np.array([True] * c.shape[0])
-    b.goodmask[b.badidx] = False
+    if len(b.badsegs) == 0:
+        b.badidx = np.array([])
+    else:
+        b.badidx = np.concatenate(
+            [np.arange(r.t1, r.t2) for r in segedges.itertuples()]
+        )
+        b.goodmask[b.badidx] = False
     b.data = np.full([256] + list(c.shape), np.nan, dtype=dtype)
     if (replace is False) or (1 not in b.badchan):
         b.data[0,] = c
